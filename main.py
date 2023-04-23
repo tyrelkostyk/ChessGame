@@ -1,5 +1,6 @@
+
 import pygame
-from piece import *
+from piece import Pawn, Rook, Knight, Bishop, King, Queen
 from common import *
 
 ### Game Setup & Init

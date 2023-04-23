@@ -1,8 +1,8 @@
-import pygame
+import pygame as game
 from common import *
 import os
 
-class Piece(pygame.sprite.Sprite):
+class Piece(game.sprite.Sprite):
 
     def __init__(self, character, isWhite, startingPosition=None):
         super().__init__()
@@ -18,9 +18,9 @@ class Piece(pygame.sprite.Sprite):
 
         # load the image
         characterImagePath = os.path.join('images', f'{self.colour}_{self.character}.png')
-        characterImage = pygame.image.load(characterImagePath)
+        characterImage = game.image.load(characterImagePath)
         # scale the image
-        self.image = pygame.transform.scale(characterImage, (self.width, self.height))
+        self.image = game.transform.scale(characterImage, (self.width, self.height))
 
         # todo: draw actual image here
 
@@ -83,5 +83,3 @@ class Queen(Piece):
             column = 4
             startingPosition = (row, column)
         super().__init__(character, isWhite, startingPosition)
-
-
