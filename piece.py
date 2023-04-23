@@ -22,13 +22,13 @@ class Piece(game.sprite.Sprite):
         # scale the image
         self.image = game.transform.scale(characterImage, (self.width, self.height))
 
-        # todo: draw actual image here
-
+        # place the image (as a rectangle) at its starting position
         self.rect = self.image.get_rect()
-        # row placement
         self.rect.x = self.position[1] * TILE_WIDTH + BORDER_WIDTH
-        # column placement
         self.rect.y = self.position[0] * TILE_WIDTH + BORDER_WIDTH
+
+        # base pieces have no valid moves
+        self.validMoves = None
 
 class Pawn(Piece):
     def __init__(self, isWhite, number=1, startingPosition=None):
@@ -37,7 +37,23 @@ class Pawn(Piece):
             row = 1 if isWhite else 6
             column = number - 1
             startingPosition = (row, column)
+        else:
+            row = startingPosition[0]
+            column = startingPosition[1]
         super().__init__(character, isWhite, startingPosition)
+
+        self.firstMoveMade = False
+
+        # define initial valid moves
+        self.validMoves.append((row, column - 1 if isWhite else column + 1))
+        self.validMoves.append((row, column - 2 if isWhite else column + 2))
+
+    def isValidMove(self, newPosition):
+        if newPosition is None:
+            return False
+        if newPosition in self.validMoves:
+            return True
+        return False
 
 class Rook(Piece):
     def __init__(self, isWhite, number=1, startingPosition=None):
