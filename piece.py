@@ -7,7 +7,7 @@ class Piece(game.sprite.Sprite):
     def __init__(self, character, isWhite, startingPosition=None):
         super().__init__()
 
-        # parameters
+        # placement parameters
         self.character = character
         self.colour = 'white' if isWhite else 'black'
         self.position = (0, 0) if (startingPosition is None) else startingPosition
@@ -24,11 +24,38 @@ class Piece(game.sprite.Sprite):
 
         # place the image (as a rectangle) at its starting position
         self.rect = self.image.get_rect()
-        self.rect.x = self.position[1] * TILE_WIDTH + BORDER_WIDTH
-        self.rect.y = self.position[0] * TILE_WIDTH + BORDER_WIDTH
+        self.snapToTile(self.position)
 
         # base pieces have no valid moves
-        self.validMoves = None
+        self.validMoves = []
+
+        # basics
+        self.captured = False
+
+    def snapToTile(self, tile):
+        self.rect.x = tile[COL_INDEX] * TILE_WIDTH + BORDER_WIDTH
+        self.rect.y = tile[ROW_INDEX] * TILE_WIDTH + BORDER_WIDTH
+
+    def snapToNearestTile(self):
+        self.rect.x = ((self.rect.x + TILE_WIDTH // 2) // TILE_WIDTH) * TILE_WIDTH + BORDER_WIDTH
+        self.rect.y = ((self.rect.y + TILE_WIDTH // 2) // TILE_WIDTH) * TILE_WIDTH + BORDER_WIDTH
+
+    def snapToCurrentTile(self):
+        self.snapToTile(self.getCurrentTile())
+
+    def setCords(self, cords):
+        self.rect.x = cords[0]
+        self.rect.y = cords[1]
+
+    def getCurrentTile(self):
+        return cordsToTile(self.rect.x, self.rect.y)
+
+    def getCurrentCords(self):
+        return self.rect.x, self.rect.y
+
+    def detectCollision(self, cords):
+        return self.rect.collidepoint(cords[0], cords[1])
+
 
 class Pawn(Piece):
     def __init__(self, isWhite, number=1, startingPosition=None):
@@ -36,17 +63,17 @@ class Pawn(Piece):
         if startingPosition is None:
             row = 1 if isWhite else 6
             column = number - 1
-            startingPosition = (row, column)
+            startingPosition = (column, row)
         else:
-            row = startingPosition[0]
-            column = startingPosition[1]
+            row = startingPosition[ROW_INDEX]
+            column = startingPosition[COL_INDEX]
         super().__init__(character, isWhite, startingPosition)
 
         self.firstMoveMade = False
 
         # define initial valid moves
-        self.validMoves.append((row, column - 1 if isWhite else column + 1))
-        self.validMoves.append((row, column - 2 if isWhite else column + 2))
+        self.validMoves.append((column - 1 if isWhite else column + 1, row))
+        self.validMoves.append((column - 2 if isWhite else column + 2, row))
 
     def isValidMove(self, newPosition):
         if newPosition is None:
@@ -61,7 +88,7 @@ class Rook(Piece):
         if startingPosition is None:
             row = 0 if isWhite else 7
             column = 0 if (number == 1) else 7
-            startingPosition = (row, column)
+            startingPosition = (column, row)
         super().__init__(character, isWhite, startingPosition)
 
 class Knight(Piece):
@@ -70,7 +97,7 @@ class Knight(Piece):
         if startingPosition is None:
             row = 0 if isWhite else 7
             column = 1 if (number == 1) else 6
-            startingPosition = (row, column)
+            startingPosition = (column, row)
         super().__init__(character, isWhite, startingPosition)
 
 class Bishop(Piece):
@@ -79,7 +106,7 @@ class Bishop(Piece):
         if startingPosition is None:
             row = 0 if isWhite else 7
             column = 2 if (number == 1) else 5
-            startingPosition = (row, column)
+            startingPosition = (column, row)
         super().__init__(character, isWhite, startingPosition)
 
 class King(Piece):
@@ -88,7 +115,7 @@ class King(Piece):
         if startingPosition is None:
             row = 0 if isWhite else 7
             column = 3
-            startingPosition = (row, column)
+            startingPosition = (column, row)
         super().__init__(character, isWhite, startingPosition)
 
 class Queen(Piece):
@@ -97,5 +124,5 @@ class Queen(Piece):
         if startingPosition is None:
             row = 0 if isWhite else 7
             column = 4
-            startingPosition = (row, column)
+            startingPosition = (column, row)
         super().__init__(character, isWhite, startingPosition)

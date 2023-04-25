@@ -1,7 +1,8 @@
-
 import pygame
-from piece import Pawn, Rook, Knight, Bishop, King, Queen
+from piece import Piece, Pawn, Rook, Knight, Bishop, King, Queen
 from common import *
+
+from typing import Optional
 
 ### Game Setup & Init
 pygame.init()
@@ -96,8 +97,8 @@ pieces.add(blackPawnEight)
 
 ### main game loop
 
-selectedPiece = None
-mouseOffset = (0, 1)
+selectedPiece: Optional[Piece] = None   # the selected (grabbed) piece
+mousePieceOffset = (0, 1)               # offset between the cursor and piece
 
 carryOn = True
 while carryOn:
@@ -106,27 +107,23 @@ while carryOn:
         if event.type == pygame.QUIT:
             carryOn = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            # left mouse button
-            if event.button == 1:
+            if event.button == LEFT_MOUSE_BUTTON:
                 for piece in pieces:
-                    if piece.rect.collidepoint(event.pos):
+                    if piece.detectCollision(event.pos):
                         selectedPiece = piece
-                        mouseOffset = (event.pos[0] - piece.rect.x, event.pos[1] - piece.rect.y)
+                        pieceCord = piece.getCurrentCords()
+                        mousePieceOffset = (event.pos[0] - pieceCord[0], event.pos[1] - pieceCord[1])
                         break
         elif event.type == pygame.MOUSEBUTTONUP:
-            # left mouse button
-            if event.button == 1:
+            if event.button == LEFT_MOUSE_BUTTON:
                 if selectedPiece:
-                    # snap piece to selected tile
-                    x = (selectedPiece.rect.x + TILE_WIDTH // 2) // TILE_WIDTH
-                    y = (selectedPiece.rect.y + TILE_WIDTH // 2) // TILE_WIDTH
-                    selectedPiece.rect.x = x * TILE_WIDTH + BORDER_WIDTH
-                    selectedPiece.rect.y = y * TILE_WIDTH + BORDER_WIDTH
+                    selectedPiece.snapToTile(cordsToTile(event.pos[0], event.pos[1]))
                 selectedPiece = None
         elif event.type == pygame.MOUSEMOTION:
             if selectedPiece:
-                selectedPiece.rect.x = event.pos[0] - mouseOffset[0]
-                selectedPiece.rect.y = event.pos[1] - mouseOffset[1]
+                newPieceXCord = event.pos[0] - mousePieceOffset[0]
+                newPieceYCord = event.pos[1] - mousePieceOffset[1]
+                selectedPiece.setCords((newPieceXCord, newPieceYCord))
 
     ## game logic
 
@@ -140,9 +137,9 @@ while carryOn:
         for col in range(TILE_COUNT):
             square = pygame.Rect(col * TILE_WIDTH, row * TILE_WIDTH, TILE_WIDTH, TILE_WIDTH)
             if (row + col) % 2 == 0:
-                pygame.draw.rect(screen, LIGHT_BROWN, square)
+                pygame.draw.rect(screen, LIGHT_TILE_COLOUR, square)
             else:
-                pygame.draw.rect(screen, DARK_BROWN, square)
+                pygame.draw.rect(screen, DARK_TILE_COLOUR, square)
 
     # draw pieces
     pieces.draw(screen)
