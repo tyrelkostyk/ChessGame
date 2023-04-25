@@ -36,13 +36,6 @@ class Piece(game.sprite.Sprite):
         self.rect.x = tile[COL_INDEX] * TILE_WIDTH + BORDER_WIDTH
         self.rect.y = tile[ROW_INDEX] * TILE_WIDTH + BORDER_WIDTH
 
-    def snapToNearestTile(self):
-        self.rect.x = ((self.rect.x + TILE_WIDTH // 2) // TILE_WIDTH) * TILE_WIDTH + BORDER_WIDTH
-        self.rect.y = ((self.rect.y + TILE_WIDTH // 2) // TILE_WIDTH) * TILE_WIDTH + BORDER_WIDTH
-
-    def snapToCurrentTile(self):
-        self.snapToTile(self.getCurrentTile())
-
     def setCords(self, cords):
         self.rect.x = cords[0]
         self.rect.y = cords[1]
