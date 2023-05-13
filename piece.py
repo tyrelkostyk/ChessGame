@@ -33,6 +33,8 @@ class Piece(game.sprite.Sprite):
         # some pieces have special privileges on their first move
         self.firstMoveMade = False
 
+        # define initial valid moves
+        self.calculateNewValidMoves()
 
     def getPosition(self):
         return self.position
@@ -83,6 +85,13 @@ class Piece(game.sprite.Sprite):
     def calculateNewValidMoves(self):
         self.validMoves = []
 
+    def addNewValidMove(self, tile):
+        if tile[COL_INDEX] < 0 or tile[COL_INDEX] >= TILE_COUNT:
+            return
+        if tile[ROW_INDEX] < 0 or tile[ROW_INDEX] >= TILE_COUNT:
+            return
+        self.validMoves.append(tile)
+
     def move(self, tile):
         self.firstMoveMade = True
 
@@ -100,19 +109,13 @@ class Pawn(Piece):
             row = 1 if isWhite else 6
             column = number - 1
             startingPosition = (column, row)
-        else:
-            row = startingPosition[ROW_INDEX]
-            column = startingPosition[COL_INDEX]
         super().__init__(character, isWhite, startingPosition)
-
-        # define initial valid moves
-        self.calculateNewValidMoves()
 
     def calculateNewValidMoves(self):
         self.validMoves = []
-        self.validMoves.append((self.getCurrentColumn(), self.getCurrentRow() + 1 if self.isWhite else self.getCurrentRow() - 1))
+        self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + 1 if self.isWhite else self.getPositionRow() - 1))
         if self.firstMoveMade is not True:
-            self.validMoves.append((self.getCurrentColumn(), self.getCurrentRow() + 2 if self.isWhite else self.getCurrentRow() - 2))
+            self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + 2 if self.isWhite else self.getPositionRow() - 2))
 
 class Rook(Piece):
     def __init__(self, isWhite, number=1, startingPosition=None):
@@ -131,6 +134,18 @@ class Knight(Piece):
             column = 1 if (number == 1) else 6
             startingPosition = (column, row)
         super().__init__(character, isWhite, startingPosition)
+
+    def calculateNewValidMoves(self):
+        self.validMoves = []
+        self.addNewValidMove((self.getPositionColumn() + 2, self.getPositionRow() + 1))
+        self.addNewValidMove((self.getPositionColumn() + 2, self.getPositionRow() - 1))
+        self.addNewValidMove((self.getPositionColumn() - 2, self.getPositionRow() + 1))
+        self.addNewValidMove((self.getPositionColumn() - 2, self.getPositionRow() - 1))
+        self.addNewValidMove((self.getPositionColumn() - 1, self.getPositionRow() + 2))
+        self.addNewValidMove((self.getPositionColumn() + 1, self.getPositionRow() + 2))
+        self.addNewValidMove((self.getPositionColumn() - 1, self.getPositionRow() - 2))
+        self.addNewValidMove((self.getPositionColumn() + 1, self.getPositionRow() - 2))
+
 
 class Bishop(Piece):
     def __init__(self, isWhite, number=1, startingPosition=None):
