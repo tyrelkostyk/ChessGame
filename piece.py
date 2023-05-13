@@ -1,11 +1,17 @@
 import pygame as game
-from common import *
+from typing import Optional
 import os
+
+from common import *
+from board import Board
 
 class Piece(game.sprite.Sprite):
 
-    def __init__(self, character, isWhite, startingPosition=None):
+    def __init__(self, character, isWhite, board, startingPosition=None):
         super().__init__()
+
+        # keep a reference to the board
+        self.board: Optional[Board] = board
 
         # placement parameters
         self.character = character
@@ -23,9 +29,10 @@ class Piece(game.sprite.Sprite):
         # scale the image
         self.image = game.transform.scale(characterImage, (self.width, self.height))
 
-        # place the image (as a rectangle) at its starting position
+        # place the piece (and its image) at the starting position
         self.rect = self.image.get_rect()
         self.updateTilePosition(self.position)
+        self.board.addPieceAtTile(self, self.position)
 
         # base pieces have no valid moves
         self.validMoves = []
@@ -35,6 +42,9 @@ class Piece(game.sprite.Sprite):
 
         # define initial valid moves
         self.calculateNewValidMoves()
+
+    def getIsWhite(self):
+        return self.isWhite
 
     def getPosition(self):
         return self.position
@@ -65,6 +75,7 @@ class Piece(game.sprite.Sprite):
         self.rect.y = tile[ROW_INDEX] * TILE_WIDTH + BORDER_WIDTH
 
     def updateTilePosition(self, tile):
+        self.board.movePieceToTile(self, self.getPosition(), tile)
         self.snapToTile(tile)
         self.position = cordsToTile(self.rect.x, self.rect.y)
 
@@ -90,6 +101,8 @@ class Piece(game.sprite.Sprite):
             return
         if tile[ROW_INDEX] < 0 or tile[ROW_INDEX] >= TILE_COUNT:
             return
+        if self.board.isTileOccupied(tile):
+            return
         self.validMoves.append(tile)
 
     def move(self, tile):
@@ -98,42 +111,40 @@ class Piece(game.sprite.Sprite):
         # move to new tile
         self.updateTilePosition(tile)
 
-        # calculate new valid moves
-        self.calculateNewValidMoves()
-
 
 class Pawn(Piece):
-    def __init__(self, isWhite, number=1, startingPosition=None):
+    def __init__(self, isWhite, board, number=1, startingPosition=None):
         character = 'pawn'
         if startingPosition is None:
             row = 1 if isWhite else 6
             column = number - 1
             startingPosition = (column, row)
-        super().__init__(character, isWhite, startingPosition)
+        super().__init__(character, isWhite, board, startingPosition)
 
     def calculateNewValidMoves(self):
         self.validMoves = []
-        self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + 1 if self.isWhite else self.getPositionRow() - 1))
-        if self.firstMoveMade is not True:
-            self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + 2 if self.isWhite else self.getPositionRow() - 2))
+        direction = 1 if self.isWhite else -1
+        self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + (1 * direction)))
+        if self.firstMoveMade is not True and not self.board.isTileOccupied((self.getPositionColumn(), self.getPositionRow() + (1 * direction))):
+            self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + (2 * direction)))
 
 class Rook(Piece):
-    def __init__(self, isWhite, number=1, startingPosition=None):
+    def __init__(self, isWhite, board, number=1, startingPosition=None):
         character = 'rook'
         if startingPosition is None:
             row = 0 if isWhite else 7
             column = 0 if (number == 1) else 7
             startingPosition = (column, row)
-        super().__init__(character, isWhite, startingPosition)
+        super().__init__(character, isWhite, board, startingPosition)
 
 class Knight(Piece):
-    def __init__(self, isWhite, number=1, startingPosition=None):
+    def __init__(self, isWhite, board, number=1, startingPosition=None):
         character = 'knight'
         if startingPosition is None:
             row = 0 if isWhite else 7
             column = 1 if (number == 1) else 6
             startingPosition = (column, row)
-        super().__init__(character, isWhite, startingPosition)
+        super().__init__(character, isWhite, board, startingPosition)
 
     def calculateNewValidMoves(self):
         self.validMoves = []
@@ -148,28 +159,28 @@ class Knight(Piece):
 
 
 class Bishop(Piece):
-    def __init__(self, isWhite, number=1, startingPosition=None):
+    def __init__(self, isWhite, board, number=1, startingPosition=None):
         character = 'bishop'
         if startingPosition is None:
             row = 0 if isWhite else 7
             column = 2 if (number == 1) else 5
             startingPosition = (column, row)
-        super().__init__(character, isWhite, startingPosition)
+        super().__init__(character, isWhite, board, startingPosition)
 
 class King(Piece):
-    def __init__(self, isWhite, startingPosition=None):
+    def __init__(self, isWhite, board, startingPosition=None):
         character = 'king'
         if startingPosition is None:
             row = 0 if isWhite else 7
             column = 3
             startingPosition = (column, row)
-        super().__init__(character, isWhite, startingPosition)
+        super().__init__(character, isWhite, board, startingPosition)
 
 class Queen(Piece):
-    def __init__(self, isWhite, startingPosition=None):
+    def __init__(self, isWhite, board, startingPosition=None):
         character = 'queen'
         if startingPosition is None:
             row = 0 if isWhite else 7
             column = 4
             startingPosition = (column, row)
-        super().__init__(character, isWhite, startingPosition)
+        super().__init__(character, isWhite, board, startingPosition)

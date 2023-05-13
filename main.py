@@ -1,4 +1,5 @@
 import pygame
+
 from game import Game
 from common import *
 
