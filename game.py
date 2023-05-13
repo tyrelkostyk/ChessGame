@@ -117,8 +117,13 @@ class Game:
             self.selectedPiece.setCords(newPosition)
 
     def placePiece(self, mousePosition):
-        if self.selectedPiece:
-            self.selectedPiece.snapToTile(cordsToTile(mousePosition[0], mousePosition[1]))
+        if self.selectedPiece is None:
+            return
+        newTile = cordsToTile(mousePosition[0], mousePosition[1])
+        if self.selectedPiece.isValidMove(newTile):
+            self.selectedPiece.move(newTile)
+        else:
+            self.selectedPiece.goBackToPosition()
         self.selectedPiece = None
 
 

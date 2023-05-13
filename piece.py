@@ -9,6 +9,7 @@ class Piece(game.sprite.Sprite):
 
         # placement parameters
         self.character = character
+        self.isWhite = True if isWhite else False
         self.colour = 'white' if isWhite else 'black'
         self.position = (0, 0) if (startingPosition is None) else startingPosition
 
@@ -24,27 +25,72 @@ class Piece(game.sprite.Sprite):
 
         # place the image (as a rectangle) at its starting position
         self.rect = self.image.get_rect()
-        self.snapToTile(self.position)
+        self.updateTilePosition(self.position)
 
         # base pieces have no valid moves
         self.validMoves = []
 
-    def snapToTile(self, tile):
-        self.rect.x = tile[COL_INDEX] * TILE_WIDTH + BORDER_WIDTH
-        self.rect.y = tile[ROW_INDEX] * TILE_WIDTH + BORDER_WIDTH
+        # some pieces have special privileges on their first move
+        self.firstMoveMade = False
 
-    def setCords(self, cords):
-        self.rect.x = cords[0]
-        self.rect.y = cords[1]
+
+    def getPosition(self):
+        return self.position
+
+    def getPositionColumn(self):
+        return self.getPosition()[COL_INDEX]
+
+    def getPositionRow(self):
+        return self.getPosition()[ROW_INDEX]
 
     def getCurrentTile(self):
         return cordsToTile(self.rect.x, self.rect.y)
+
+    def getCurrentColumn(self):
+        return self.getCurrentTile()[COL_INDEX]
+
+    def getCurrentRow(self):
+        return self.getCurrentTile()[ROW_INDEX]
 
     def getCurrentCords(self):
         return self.rect.x, self.rect.y
 
     def detectCollision(self, cords):
         return self.rect.collidepoint(cords[0], cords[1])
+
+    def snapToTile(self, tile):
+        self.rect.x = tile[COL_INDEX] * TILE_WIDTH + BORDER_WIDTH
+        self.rect.y = tile[ROW_INDEX] * TILE_WIDTH + BORDER_WIDTH
+
+    def updateTilePosition(self, tile):
+        self.snapToTile(tile)
+        self.position = cordsToTile(self.rect.x, self.rect.y)
+
+    def goBackToPosition(self):
+        self.snapToTile(self.position)
+
+    def setCords(self, cords):
+        self.rect.x = cords[0]
+        self.rect.y = cords[1]
+
+    def isValidMove(self, tile):
+        if tile is None:
+            return False
+        if tile in self.validMoves:
+            return True
+        return False
+
+    def calculateNewValidMoves(self):
+        self.validMoves = []
+
+    def move(self, tile):
+        self.firstMoveMade = True
+
+        # move to new tile
+        self.updateTilePosition(tile)
+
+        # calculate new valid moves
+        self.calculateNewValidMoves()
 
 
 class Pawn(Piece):
@@ -59,18 +105,14 @@ class Pawn(Piece):
             column = startingPosition[COL_INDEX]
         super().__init__(character, isWhite, startingPosition)
 
-        self.firstMoveMade = False
-
         # define initial valid moves
-        self.validMoves.append((column - 1 if isWhite else column + 1, row))
-        self.validMoves.append((column - 2 if isWhite else column + 2, row))
+        self.calculateNewValidMoves()
 
-    def isValidMove(self, newPosition):
-        if newPosition is None:
-            return False
-        if newPosition in self.validMoves:
-            return True
-        return False
+    def calculateNewValidMoves(self):
+        self.validMoves = []
+        self.validMoves.append((self.getCurrentColumn(), self.getCurrentRow() + 1 if self.isWhite else self.getCurrentRow() - 1))
+        if self.firstMoveMade is not True:
+            self.validMoves.append((self.getCurrentColumn(), self.getCurrentRow() + 2 if self.isWhite else self.getCurrentRow() - 2))
 
 class Rook(Piece):
     def __init__(self, isWhite, number=1, startingPosition=None):
