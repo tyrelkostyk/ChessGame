@@ -29,9 +29,6 @@ class Piece(game.sprite.Sprite):
         # base pieces have no valid moves
         self.validMoves = []
 
-        # basics
-        self.captured = False
-
     def snapToTile(self, tile):
         self.rect.x = tile[COL_INDEX] * TILE_WIDTH + BORDER_WIDTH
         self.rect.y = tile[ROW_INDEX] * TILE_WIDTH + BORDER_WIDTH
