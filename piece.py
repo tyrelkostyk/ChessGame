@@ -98,12 +98,13 @@ class Piece(game.sprite.Sprite):
 
     def addNewValidMove(self, tile):
         if tile[COL_INDEX] < 0 or tile[COL_INDEX] >= TILE_COUNT:
-            return
+            return False
         if tile[ROW_INDEX] < 0 or tile[ROW_INDEX] >= TILE_COUNT:
-            return
+            return False
         if self.board.isTileOccupied(tile):
-            return
+            return False
         self.validMoves.append(tile)
+        return True
 
     def move(self, tile):
         self.firstMoveMade = True
@@ -137,6 +138,26 @@ class Rook(Piece):
             startingPosition = (column, row)
         super().__init__(character, isWhite, board, startingPosition)
 
+    def calculateNewValidMoves(self):
+        self.validMoves = []
+        # travel right
+        for i in range(TILE_COUNT):
+            if self.addNewValidMove((self.getPositionColumn() + (i+1), self.getPositionRow())) is False:
+                break
+        # travel left
+        for i in range(TILE_COUNT):
+            if self.addNewValidMove((self.getPositionColumn() - (i+1), self.getPositionRow())) is False:
+                break
+        # travel up
+        for i in range(TILE_COUNT):
+            if self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() - (i+1))) is False:
+                break
+        # travel down
+        for i in range(TILE_COUNT):
+            if self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + (i+1))) is False:
+                break
+
+
 class Knight(Piece):
     def __init__(self, isWhite, board, number=1, startingPosition=None):
         character = 'knight'
@@ -167,6 +188,26 @@ class Bishop(Piece):
             startingPosition = (column, row)
         super().__init__(character, isWhite, board, startingPosition)
 
+    def calculateNewValidMoves(self):
+        self.validMoves = []
+        # travel right & down
+        for i in range(TILE_COUNT):
+            if self.addNewValidMove((self.getPositionColumn() + (i+1), self.getPositionRow() + (i+1))) is False:
+                break
+        # travel right & up
+        for i in range(TILE_COUNT):
+            if self.addNewValidMove((self.getPositionColumn() + (i+1), self.getPositionRow() - (i+1))) is False:
+                break
+        # travel left & up
+        for i in range(TILE_COUNT):
+            if self.addNewValidMove((self.getPositionColumn() - (i+1), self.getPositionRow() - (i+1))) is False:
+                break
+        # travel left & down
+        for i in range(TILE_COUNT):
+            if self.addNewValidMove((self.getPositionColumn() - (i+1), self.getPositionRow() + (i+1))) is False:
+                break
+
+
 class King(Piece):
     def __init__(self, isWhite, board, startingPosition=None):
         character = 'king'
@@ -176,6 +217,18 @@ class King(Piece):
             startingPosition = (column, row)
         super().__init__(character, isWhite, board, startingPosition)
 
+    def calculateNewValidMoves(self):
+        self.validMoves = []
+        self.addNewValidMove((self.getPositionColumn() + 1, self.getPositionRow() + 1))
+        self.addNewValidMove((self.getPositionColumn() + 1, self.getPositionRow() - 1))
+        self.addNewValidMove((self.getPositionColumn() + 1, self.getPositionRow()))
+        self.addNewValidMove((self.getPositionColumn() - 1, self.getPositionRow() + 1))
+        self.addNewValidMove((self.getPositionColumn() - 1, self.getPositionRow() - 1))
+        self.addNewValidMove((self.getPositionColumn() - 1, self.getPositionRow()))
+        self.addNewValidMove((self.getPositionColumn(),     self.getPositionRow() + 1))
+        self.addNewValidMove((self.getPositionColumn(),     self.getPositionRow() - 1))
+
+
 class Queen(Piece):
     def __init__(self, isWhite, board, startingPosition=None):
         character = 'queen'
@@ -184,3 +237,39 @@ class Queen(Piece):
             column = 4
             startingPosition = (column, row)
         super().__init__(character, isWhite, board, startingPosition)
+
+
+    def calculateNewValidMoves(self):
+        self.validMoves = []
+        # travel right
+        for i in range(TILE_COUNT):
+            if self.addNewValidMove((self.getPositionColumn() + (i+1), self.getPositionRow())) is False:
+                break
+        # travel left
+        for i in range(TILE_COUNT):
+            if self.addNewValidMove((self.getPositionColumn() - (i+1), self.getPositionRow())) is False:
+                break
+        # travel up
+        for i in range(TILE_COUNT):
+            if self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() - (i+1))) is False:
+                break
+        # travel down
+        for i in range(TILE_COUNT):
+            if self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + (i+1))) is False:
+                break
+        # travel right & down
+        for i in range(TILE_COUNT):
+            if self.addNewValidMove((self.getPositionColumn() + (i+1), self.getPositionRow() + (i+1))) is False:
+                break
+        # travel right & up
+        for i in range(TILE_COUNT):
+            if self.addNewValidMove((self.getPositionColumn() + (i+1), self.getPositionRow() - (i+1))) is False:
+                break
+        # travel left & up
+        for i in range(TILE_COUNT):
+            if self.addNewValidMove((self.getPositionColumn() - (i+1), self.getPositionRow() - (i+1))) is False:
+                break
+        # travel left & down
+        for i in range(TILE_COUNT):
+            if self.addNewValidMove((self.getPositionColumn() - (i+1), self.getPositionRow() + (i+1))) is False:
+                break
