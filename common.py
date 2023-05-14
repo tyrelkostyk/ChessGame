@@ -23,3 +23,13 @@ def cordsToTile(x, y):
     row = y // TILE_WIDTH
     col = x // TILE_WIDTH
     return col, row
+
+def isTileInRange(tile):
+    if tile is None:
+        return False
+    if tile[COL_INDEX] < 0 or tile[COL_INDEX] >= TILE_COUNT:
+        return False
+    if tile[ROW_INDEX] < 0 or tile[ROW_INDEX] >= TILE_COUNT:
+        return False
+    return True
+

@@ -69,10 +69,39 @@ class Game:
         if self.selectedPiece is None:
             return
         newTile = cordsToTile(mousePosition[0], mousePosition[1])
-        if self.selectedPiece.isValidMove(newTile):
-            self.selectedPiece.move(newTile)
-        else:
+        if not isTileInRange(newTile):
             self.selectedPiece.goBackToPosition()
+            self.selectedPiece = None
+            return
+
+        # TODO: implement checks for check/checkmate (entering & exiting)
+
+        # destination tile is empty
+        if not self.board.isTileOccupied(newTile):
+            # TODO: implement piece revival
+            # TODO: implement en passant
+            if self.selectedPiece.isValidMove(newTile):
+                self.selectedPiece.move(newTile)
+            else:
+                self.selectedPiece.goBackToPosition()
+
+        # destination tile has friendly piece
+        elif self.board.getPieceAtTile(newTile).getIsWhite() == self.selectedPiece.isWhite:
+            # TODO: implement castling
+            self.selectedPiece.goBackToPosition()
+
+        # destination tile has opponent piece
+        else:
+            if self.selectedPiece.isValidAttack(newTile):
+                capturedPiece = self.board.getPieceAtTile(newTile)
+                if capturedPiece in self.activePieces:
+                    self.activePieces.remove(capturedPiece)
+                if capturedPiece not in self.capturedPieces:
+                    self.capturedPieces.add(capturedPiece)
+                self.selectedPiece.move(newTile)
+            else:
+                self.selectedPiece.goBackToPosition()
+
         self.selectedPiece = None
 
 

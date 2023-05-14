@@ -34,8 +34,9 @@ class Piece(game.sprite.Sprite):
         self.updateTilePosition(self.position)
         self.board.addPieceAtTile(self, self.position)
 
-        # base pieces have no valid moves
+        # base pieces have no valid moves or attacks
         self.validMoves = []
+        self.validAttacks = []
 
         # some pieces have special privileges on their first move
         self.firstMoveMade = False
@@ -87,9 +88,16 @@ class Piece(game.sprite.Sprite):
         self.rect.y = cords[1]
 
     def isValidMove(self, tile):
-        if tile is None:
+        if not isTileInRange(tile):
             return False
         if tile in self.validMoves:
+            return True
+        return False
+
+    def isValidAttack(self, tile):
+        if not isTileInRange(tile):
+            return False
+        if tile in self.validAttacks:
             return True
         return False
 
@@ -97,11 +105,11 @@ class Piece(game.sprite.Sprite):
         self.validMoves = []
 
     def addNewValidMove(self, tile):
-        if tile[COL_INDEX] < 0 or tile[COL_INDEX] >= TILE_COUNT:
-            return False
-        if tile[ROW_INDEX] < 0 or tile[ROW_INDEX] >= TILE_COUNT:
+        if not isTileInRange(tile):
             return False
         if self.board.isTileOccupied(tile):
+            if self.board.getPieceAtTile(tile).getIsWhite() != self.isWhite:
+                self.validAttacks.append(tile)
             return False
         self.validMoves.append(tile)
         return True
@@ -125,9 +133,15 @@ class Pawn(Piece):
     def calculateNewValidMoves(self):
         self.validMoves = []
         direction = 1 if self.isWhite else -1
-        self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + (1 * direction)))
-        if self.firstMoveMade is not True and not self.board.isTileOccupied((self.getPositionColumn(), self.getPositionRow() + (1 * direction))):
-            self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + (2 * direction)))
+        # travel forward 1 square
+        if self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + (1 * direction))):
+            # travel forward 2 squares
+            if self.firstMoveMade is not True:
+                self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + (2 * direction)))
+        # capture diagonally
+        self.addNewValidMove((self.getPositionColumn() + 1, self.getPositionRow() + (1 * direction)))
+        self.addNewValidMove((self.getPositionColumn() - 1, self.getPositionRow() + (1 * direction)))
+
 
 class Rook(Piece):
     def __init__(self, isWhite, board, number=1, startingPosition=None):
