@@ -41,6 +41,9 @@ class Piece(game.sprite.Sprite):
         # some pieces have special privileges on their first move
         self.firstMoveMade = False
 
+        # pawns can be captured via en passant after moving 2 pieces at once
+        self.enPassantRisk = False
+
         # define initial valid moves
         self.calculateNewValidMoves()
 
@@ -101,6 +104,9 @@ class Piece(game.sprite.Sprite):
             return True
         return False
 
+    def isOpenToEnPassant(self):
+        return self.enPassantRisk
+
     def calculateNewValidMoves(self):
         self.validMoves = []
 
@@ -116,7 +122,6 @@ class Piece(game.sprite.Sprite):
 
     def move(self, tile):
         self.firstMoveMade = True
-
         # move to new tile
         self.updateTilePosition(tile)
 
@@ -139,8 +144,37 @@ class Pawn(Piece):
             if self.firstMoveMade is not True:
                 self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + (2 * direction)))
         # capture diagonally
-        self.addNewValidMove((self.getPositionColumn() + 1, self.getPositionRow() + (1 * direction)))
-        self.addNewValidMove((self.getPositionColumn() - 1, self.getPositionRow() + (1 * direction)))
+        self.addNewValidAttack((self.getPositionColumn() + 1, self.getPositionRow() + (1 * direction)))
+        self.addNewValidAttack((self.getPositionColumn() - 1, self.getPositionRow() + (1 * direction)))
+
+    def addNewValidMove(self, tile):
+        if not isTileInRange(tile):
+            return False
+        if self.board.isTileOccupied(tile):
+            return False
+        self.validMoves.append(tile)
+        return True
+
+    def addNewValidAttack(self, tile):
+        if not isTileInRange(tile):
+            return False
+        if self.board.isTileOccupied(tile):
+            if self.board.getPieceAtTile(tile).getIsWhite() != self.isWhite:
+                self.validAttacks.append(tile)
+            return False
+        self.validAttacks.append(tile)
+        return True
+
+    def move(self, tile):
+        # check if we're open to en passant attack (moving 2 spaces after first move)
+        if not self.firstMoveMade:
+            distance = abs(self.getPositionRow() - tile[ROW_INDEX])
+            if distance == 2:
+                self.enPassantRisk = True
+                print(f"opening myself up to en passant {tile[COL_INDEX]},{tile[ROW_INDEX]}")
+        else:
+            self.enPassantRisk = False
+        super().move(tile)
 
 
 class Rook(Piece):
