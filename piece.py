@@ -44,11 +44,17 @@ class Piece(game.sprite.Sprite):
         # pawns can be captured via en passant after moving 2 pieces at once
         self.enPassantRisk = False
 
+        # each piece needs to track whether it currently has the opposing king in check
+        self.kingChecked = False
+
         # define initial valid moves
         self.calculateNewValidMoves()
 
     def getIsWhite(self):
         return self.isWhite
+
+    def getCharacterName(self):
+        return self.character
 
     def getPosition(self):
         return self.position
@@ -68,11 +74,17 @@ class Piece(game.sprite.Sprite):
     def getCurrentRow(self):
         return self.getCurrentTile()[ROW_INDEX]
 
-    def getCurrentCords(self):
+    def getCurrentCoordinates(self):
         return self.rect.x, self.rect.y
 
-    def detectCollision(self, cords):
+    def hasKingChecked(self):
+        return self.kingChecked
+
+    def detectCoordinateCollision(self, cords):
         return self.rect.collidepoint(cords[0], cords[1])
+
+    def detectTileCollision(self, tile):
+        return self.position == tile
 
     def snapToTile(self, tile):
         self.rect.x = tile[COL_INDEX] * TILE_WIDTH + BORDER_WIDTH
@@ -109,6 +121,8 @@ class Piece(game.sprite.Sprite):
 
     def calculateNewValidMoves(self):
         self.validMoves = []
+        self.validAttacks = []
+        self.kingChecked = False
 
     def addNewValidMove(self, tile):
         if not isTileInRange(tile):
@@ -116,6 +130,8 @@ class Piece(game.sprite.Sprite):
         if self.board.isTileOccupied(tile):
             if self.board.getPieceAtTile(tile).getIsWhite() != self.isWhite:
                 self.validAttacks.append(tile)
+                if self.board.getPieceAtTile(tile).getCharacterName() == 'king':
+                    self.kingChecked = True
             return False
         self.validMoves.append(tile)
         return True
@@ -136,7 +152,7 @@ class Pawn(Piece):
         super().__init__(character, isWhite, board, startingPosition)
 
     def calculateNewValidMoves(self):
-        self.validMoves = []
+        super().calculateNewValidMoves()
         direction = 1 if self.isWhite else -1
         # travel forward 1 square
         if self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + (1 * direction))):
@@ -161,6 +177,8 @@ class Pawn(Piece):
         if self.board.isTileOccupied(tile):
             if self.board.getPieceAtTile(tile).getIsWhite() != self.isWhite:
                 self.validAttacks.append(tile)
+                if self.board.getPieceAtTile(tile).getCharacterName() == 'king':
+                    self.kingChecked = True
             return False
         self.validAttacks.append(tile)
         return True
@@ -187,7 +205,7 @@ class Rook(Piece):
         super().__init__(character, isWhite, board, startingPosition)
 
     def calculateNewValidMoves(self):
-        self.validMoves = []
+        super().calculateNewValidMoves()
         # travel right
         for i in range(TILE_COUNT):
             if self.addNewValidMove((self.getPositionColumn() + (i+1), self.getPositionRow())) is False:
@@ -216,7 +234,7 @@ class Knight(Piece):
         super().__init__(character, isWhite, board, startingPosition)
 
     def calculateNewValidMoves(self):
-        self.validMoves = []
+        super().calculateNewValidMoves()
         self.addNewValidMove((self.getPositionColumn() + 2, self.getPositionRow() + 1))
         self.addNewValidMove((self.getPositionColumn() + 2, self.getPositionRow() - 1))
         self.addNewValidMove((self.getPositionColumn() - 2, self.getPositionRow() + 1))
@@ -237,7 +255,7 @@ class Bishop(Piece):
         super().__init__(character, isWhite, board, startingPosition)
 
     def calculateNewValidMoves(self):
-        self.validMoves = []
+        super().calculateNewValidMoves()
         # travel right & down
         for i in range(TILE_COUNT):
             if self.addNewValidMove((self.getPositionColumn() + (i+1), self.getPositionRow() + (i+1))) is False:
@@ -266,7 +284,7 @@ class King(Piece):
         super().__init__(character, isWhite, board, startingPosition)
 
     def calculateNewValidMoves(self):
-        self.validMoves = []
+        super().calculateNewValidMoves()
         self.addNewValidMove((self.getPositionColumn() + 1, self.getPositionRow() + 1))
         self.addNewValidMove((self.getPositionColumn() + 1, self.getPositionRow() - 1))
         self.addNewValidMove((self.getPositionColumn() + 1, self.getPositionRow()))
@@ -288,7 +306,7 @@ class Queen(Piece):
 
 
     def calculateNewValidMoves(self):
-        self.validMoves = []
+        super().calculateNewValidMoves()
         # travel right
         for i in range(TILE_COUNT):
             if self.addNewValidMove((self.getPositionColumn() + (i+1), self.getPositionRow())) is False:

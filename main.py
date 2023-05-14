@@ -32,15 +32,15 @@ while carryOn:
         # pick up a piece (if one is present under the cursor)
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == LEFT_MOUSE_BUTTON:
-                if game.selectPiece(event.pos):
+                if game.selectPiece(cordsToTile(event.pos[0], event.pos[1])):
                     # calculate offset between cursor and piece's top-left corner position
-                    pieceCord = game.getSelectedPiece().getCurrentCords()
-                    mousePieceOffset = (event.pos[0] - pieceCord[0], event.pos[1] - pieceCord[1])
+                    pieceCoordinates = game.getSelectedPiece().getCurrentCoordinates()
+                    mousePieceOffset = (event.pos[0] - pieceCoordinates[0], event.pos[1] - pieceCoordinates[1])
 
         # place a piece down (if the proposed move is valid)
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == LEFT_MOUSE_BUTTON:
-                game.placePiece(event.pos)
+                game.placePiece(cordsToTile(event.pos[0], event.pos[1]))
 
         # move a held piece around the board
         elif event.type == pygame.MOUSEMOTION:

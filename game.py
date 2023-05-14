@@ -24,6 +24,9 @@ class Game:
         # one player (colour) can move at a time, starting with white
         self.isWhitesTurn = True
 
+        # keep track of check (only valid for the current player)
+        self.isKingInCheck = False
+
     def createStandardPieces(self):
         self.createStandardPawns(True)
         self.createStandardSpecialPieces(True)
@@ -54,11 +57,15 @@ class Game:
     def getSelectedPiece(self):
         return self.selectedPiece
 
-    def selectPiece(self, mousePosition):
+    def getBoard(self):
+        return self.board
+
+    # def selectPiece(self, mousePosition):
+    def selectPiece(self, tile):
         if self.selectedPiece is not None:
             return False
         for piece in self.getActivePieces():
-            if piece.detectCollision(mousePosition):
+            if piece.detectTileCollision(tile):
                 if not piece.getIsWhite() == self.isWhitesTurn:
                     return False
                 self.selectedPiece = piece
@@ -66,55 +73,91 @@ class Game:
                 return True
         return False
 
-    def dragPiece(self, newPosition):
+    def dragPiece(self, newCoordinatePosition):
         if self.selectedPiece:
-            self.selectedPiece.setCords(newPosition)
+            self.selectedPiece.setCords(newCoordinatePosition)
 
-    def placePiece(self, mousePosition):
+    def placePiece(self, newTile):
         if self.selectedPiece is None:
             return
-        newTile = cordsToTile(mousePosition[0], mousePosition[1])
         if not isTileInRange(newTile):
             self.selectedPiece.goBackToPosition()
             self.selectedPiece = None
             return
 
-        # TODO: implement checks for check/checkmate (entering & exiting)
+        # TODO: implement checks for checkmate
+
+        successfulMove = False
 
         # destination tile is empty
         if not self.board.isTileOccupied(newTile):
             # TODO: implement piece revival
 
-            if self.selectedPiece.isValidMove(newTile):
-                self.selectedPiece.move(newTile)
-                self.isWhitesTurn = not self.isWhitesTurn
+            if self.selectedPiece.isValidMove(newTile) and self.movePiece(newTile):
+                successfulMove = True
+
             # TODO: capture via en passant
             # elif self.selectedPiece.isValidAttack(newTile):
             #     self.captureViaEnPassant(self.selectedPiece, newTile)
-            else:
-                self.selectedPiece.goBackToPosition()
 
         # destination tile has friendly piece
         elif self.board.getPieceAtTile(newTile).getIsWhite() == self.selectedPiece.isWhite:
             # TODO: implement castling
-            self.selectedPiece.goBackToPosition()
+            pass
 
         # destination tile has opponent piece
-        else:
-            if self.selectedPiece.isValidAttack(newTile):
-                self.capturePiece(self.board.getPieceAtTile(newTile))
-                self.selectedPiece.move(newTile)
-                self.isWhitesTurn = not self.isWhitesTurn
-            else:
-                self.selectedPiece.goBackToPosition()
+        elif self.selectedPiece.isValidAttack(newTile) and self.movePiece(newTile, self.board.getPieceAtTile(newTile)):
+            successfulMove = True
 
-        self.selectedPiece = None
+        if successfulMove:
+            self.completeTurn()
+        else:
+            self.cancelMove()
 
     def capturePiece(self, capturedPiece):
         if capturedPiece in self.activePieces:
             self.activePieces.remove(capturedPiece)
         if capturedPiece not in self.capturedPieces:
             self.capturedPieces.add(capturedPiece)
+
+    def restorePiece(self, capturedPiece, newTile=None):
+        if capturedPiece in self.capturedPieces:
+            self.capturedPieces.remove(capturedPiece)
+        if capturedPiece not in self.activePieces:
+            self.activePieces.add(capturedPiece)
+            position = capturedPiece.getPosition() if newTile is None else newTile
+            capturedPiece.move(position)
+
+    def movePiece(self, newTile, existingPiece=None):
+        if self.selectedPiece is None:
+            return False
+        # captured piece (if necessary)
+        if existingPiece is not None:
+            self.capturePiece(existingPiece)
+        # record original piece position
+        startingPosition = self.selectedPiece.getPosition()
+        # determine if the moving player was previously in check
+        inCheck = self.isCurrentPlayerInCheck()
+        # move piece
+        self.selectedPiece.move(newTile)
+        # if previously in check, evaluate check resolution
+        if inCheck and self.isCurrentPlayerInCheck():
+            # restore capture piece
+            if existingPiece is not None:
+                self.restorePiece(existingPiece)
+            # place selected piece back to its original position
+            self.selectedPiece.move(startingPosition)
+            return False
+        # successfully moved the piece
+        return True
+
+    def cancelMove(self):
+        self.selectedPiece.goBackToPosition()
+        self.selectedPiece = None
+
+    def completeTurn(self):
+        self.isWhitesTurn = not self.isWhitesTurn
+        self.selectedPiece = None
 
     # def captureViaEnPassant(self, attackingPiece, tile):
     #     direction = -1 if attackingPiece.getIsWhite() else 1
@@ -134,7 +177,15 @@ class Game:
     #     self.selectedPiece.move(newTile)
     #     self.isWhitesTurn = not self.isWhitesTurn
 
-
-
-
+    def isCurrentPlayerInCheck(self):
+        self.isKingInCheck = False
+        for piece in self.activePieces:
+            # only evaluate opponent pieces
+            if piece.getIsWhite() == self.isWhitesTurn:
+                continue
+            piece.calculateNewValidMoves()
+            if piece.hasKingChecked():
+                self.isKingInCheck = True
+                break
+        return self.isKingInCheck
 
