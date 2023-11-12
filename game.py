@@ -1,5 +1,5 @@
 import pygame
-from typing import Optional
+from typing import Optional, cast
 
 from piece import Piece, Pawn, Rook, Knight, Bishop, King, Queen
 from board import Board
@@ -93,12 +93,21 @@ class Game:
         if not self.board.isTileOccupied(newTile):
             # TODO: implement piece revival
 
-            if self.selectedPiece.isValidMove(newTile) and self.movePiece(newTile):
-                successfulMove = True
+            # capture via en passant
+            if self.selectedPiece.isValidAttack(newTile) and self.selectedPiece.getCharacterName() == 'pawn':
+                # pawns moving to an open space may be able to capture an enemy pawn via En Passant
+                self.selectedPiece = cast(Pawn, self.selectedPiece)
+                enPassantVictimTile = (newTile[COL_INDEX], newTile[ROW_INDEX] - self.selectedPiece.getDirection())
+                # is the tile behind a pawn?
+                if self.board.isTileOccupied(enPassantVictimTile) and self.board.getPieceAtTile(enPassantVictimTile).getCharacterName() == 'pawn':
+                    victimPawn = cast(Pawn, self.board.getPieceAtTile(enPassantVictimTile))
+                    # did the victim pawn enter En Passant risk last turn?
+                    if victimPawn.isOpenToEnPassant():
+                        self.movePiece(newTile, self.board.getPieceAtTile(enPassantVictimTile))
+                        successfulMove = True
 
-            # TODO: capture via en passant
-            # elif self.selectedPiece.isValidAttack(newTile):
-            #     self.captureViaEnPassant(self.selectedPiece, newTile)
+            if not successfulMove and self.selectedPiece.isValidMove(newTile) and self.movePiece(newTile):
+                successfulMove = True
 
         # destination tile has friendly piece
         elif self.board.getPieceAtTile(newTile).getIsWhite() == self.selectedPiece.isWhite:
@@ -111,6 +120,7 @@ class Game:
 
         if successfulMove:
             self.completeTurn()
+            incrementTurnNumber()
         else:
             self.cancelMove()
 
@@ -158,24 +168,6 @@ class Game:
     def completeTurn(self):
         self.isWhitesTurn = not self.isWhitesTurn
         self.selectedPiece = None
-
-    # def captureViaEnPassant(self, attackingPiece, tile):
-    #     direction = -1 if attackingPiece.getIsWhite() else 1
-    #     newTile = (tile[COL_INDEX], tile[ROW_INDEX] + (1 * direction))
-    #     print(f"checking for en passant enemy pawn at tile {newTile[COL_INDEX]},{newTile[ROW_INDEX]}")
-    #     if not isTileInRange(newTile):
-    #         return False
-    #     if not self.board.isTileOccupied(newTile):
-    #         return False
-    #     pieceAtRisk = self.board.getPieceAtTile(newTile)
-    #     if pieceAtRisk.getIsWhite() == attackingPiece.getIsWhite():
-    #         return False
-    #     if not pieceAtRisk.isOpenToEnPassant():
-    #         return False
-    #     print(f"Successful en passant at tile {tile[COL_INDEX]},{tile[ROW_INDEX]}")
-    #     self.capturePiece(pieceAtRisk)
-    #     self.selectedPiece.move(newTile)
-    #     self.isWhitesTurn = not self.isWhitesTurn
 
     def isCurrentPlayerInCheck(self):
         self.isKingInCheck = False

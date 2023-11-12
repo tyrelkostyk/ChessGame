@@ -19,5 +19,3 @@ class Board:
         self.board[startingTile[ROW_INDEX]][startingTile[COL_INDEX]] = None
         self.board[endingTile[ROW_INDEX]][endingTile[COL_INDEX]] = piece
 
-
-

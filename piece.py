@@ -41,9 +41,6 @@ class Piece(game.sprite.Sprite):
         # some pieces have special privileges on their first move
         self.firstMoveMade = False
 
-        # pawns can be captured via en passant after moving 2 pieces at once
-        self.enPassantRisk = False
-
         # each piece needs to track whether it currently has the opposing king in check
         self.kingChecked = False
 
@@ -116,9 +113,6 @@ class Piece(game.sprite.Sprite):
             return True
         return False
 
-    def isOpenToEnPassant(self):
-        return self.enPassantRisk
-
     def calculateNewValidMoves(self):
         self.validMoves = []
         self.validAttacks = []
@@ -145,6 +139,9 @@ class Piece(game.sprite.Sprite):
 class Pawn(Piece):
     def __init__(self, isWhite, board, number=1, startingPosition=None):
         character = 'pawn'
+        self.direction = 1 if isWhite else -1
+        self.enPassantRiskTurn = 0
+
         if startingPosition is None:
             row = 1 if isWhite else 6
             column = number - 1
@@ -153,15 +150,14 @@ class Pawn(Piece):
 
     def calculateNewValidMoves(self):
         super().calculateNewValidMoves()
-        direction = 1 if self.isWhite else -1
         # travel forward 1 square
-        if self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + (1 * direction))):
+        if self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + self.direction)):
             # travel forward 2 squares
             if self.firstMoveMade is not True:
-                self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + (2 * direction)))
+                self.addNewValidMove((self.getPositionColumn(), self.getPositionRow() + (2 * self.direction)))
         # capture diagonally
-        self.addNewValidAttack((self.getPositionColumn() + 1, self.getPositionRow() + (1 * direction)))
-        self.addNewValidAttack((self.getPositionColumn() - 1, self.getPositionRow() + (1 * direction)))
+        self.addNewValidAttack((self.getPositionColumn() + 1, self.getPositionRow() + self.direction))
+        self.addNewValidAttack((self.getPositionColumn() - 1, self.getPositionRow() + self.direction))
 
     def addNewValidMove(self, tile):
         if not isTileInRange(tile):
@@ -188,11 +184,16 @@ class Pawn(Piece):
         if not self.firstMoveMade:
             distance = abs(self.getPositionRow() - tile[ROW_INDEX])
             if distance == 2:
-                self.enPassantRisk = True
-                print(f"opening myself up to en passant {tile[COL_INDEX]},{tile[ROW_INDEX]}")
+                self.enPassantRiskTurn = getTurnNumber()
         else:
-            self.enPassantRisk = False
+            self.enPassantRiskTurn = 0
         super().move(tile)
+
+    def getDirection(self):
+        return self.direction
+
+    def isOpenToEnPassant(self):
+        return getTurnNumber() - self.enPassantRiskTurn == 1
 
 
 class Rook(Piece):

@@ -18,6 +18,9 @@ TILE_WIDTH = WINDOW_WIDTH // TILE_COUNT
 BORDER_WIDTH = TILE_WIDTH // 10 * 2
 PIECE_WIDTH = TILE_WIDTH - (2 * BORDER_WIDTH)
 
+## turn & time
+turnNumber = 0
+
 ## tile functions
 def cordsToTile(x, y):
     row = y // TILE_WIDTH
@@ -32,4 +35,14 @@ def isTileInRange(tile):
     if tile[ROW_INDEX] < 0 or tile[ROW_INDEX] >= TILE_COUNT:
         return False
     return True
+
+## turn & time functions
+
+def incrementTurnNumber():
+    global turnNumber
+    turnNumber = turnNumber + 1
+
+def getTurnNumber():
+    global turnNumber
+    return turnNumber
 
