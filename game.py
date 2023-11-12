@@ -24,9 +24,6 @@ class Game:
         # one player (colour) can move at a time, starting with white
         self.isWhitesTurn = True
 
-        # keep track of check (only valid for the current player)
-        self.isKingInCheck = False
-
     def createStandardPieces(self):
         self.createStandardPawns(True)
         self.createStandardSpecialPieces(True)
@@ -60,7 +57,6 @@ class Game:
     def getBoard(self):
         return self.board
 
-    # def selectPiece(self, mousePosition):
     def selectPiece(self, tile):
         if self.selectedPiece is not None:
             return False
@@ -84,8 +80,6 @@ class Game:
             self.selectedPiece.goBackToPosition()
             self.selectedPiece = None
             return
-
-        # TODO: implement checks for checkmate
 
         successfulMove = False
 
@@ -119,6 +113,11 @@ class Game:
             successfulMove = True
 
         if successfulMove:
+            if self.isOpponentCheckmated():
+                print(f"{'White' if self.isWhitesTurn else 'Black'} Wins!!!")
+                # TODO: end game, increment score, etc.
+
+            self.whereIsOpposingPlayerInCheck()
             self.completeTurn()
             incrementTurnNumber()
         else:
@@ -142,24 +141,46 @@ class Game:
         if self.selectedPiece is None:
             return False
         # captured piece (if necessary)
-        if existingPiece is not None:
-            self.capturePiece(existingPiece)
+        pieceToBeCaptured = existingPiece
+        if pieceToBeCaptured is None:
+            pieceToBeCaptured = self.board.getPieceAtTile(newTile)
+        if pieceToBeCaptured is not None:
+            self.capturePiece(pieceToBeCaptured)
         # record original piece position
         startingPosition = self.selectedPiece.getPosition()
-        # determine if the moving player was previously in check
-        inCheck = self.isCurrentPlayerInCheck()
         # move piece
         self.selectedPiece.move(newTile)
-        # if previously in check, evaluate check resolution
-        if inCheck and self.isCurrentPlayerInCheck():
+        # can't make a move that results in check
+        if self.isPlayerInCheck(self.isWhitesTurn):
             # restore capture piece
-            if existingPiece is not None:
-                self.restorePiece(existingPiece)
+            if pieceToBeCaptured is not None:
+                self.restorePiece(pieceToBeCaptured)
             # place selected piece back to its original position
             self.selectedPiece.move(startingPosition)
             return False
         # successfully moved the piece
         return True
+
+    def simulatePieceMovement(self, piece, newTile):
+        if piece is None:
+            return False
+        # captured piece (if necessary)
+        existingPiece = self.board.getPieceAtTile(newTile)
+        if existingPiece is not None:
+            self.capturePiece(existingPiece)
+        # record original piece position
+        startingPosition = piece.getPosition()
+        # move piece
+        piece.move(newTile)
+        # evaluate if this player is still in check after the move
+        escapedCheck = not self.isPlayerInCheck(piece.getIsWhite())
+        # restore capture piece
+        if existingPiece is not None:
+            self.restorePiece(existingPiece)
+        # place selected piece back to its original position
+        piece.move(startingPosition)
+        # successfully moved the piece
+        return escapedCheck
 
     def cancelMove(self):
         self.selectedPiece.goBackToPosition()
@@ -169,15 +190,43 @@ class Game:
         self.isWhitesTurn = not self.isWhitesTurn
         self.selectedPiece = None
 
-    def isCurrentPlayerInCheck(self):
-        self.isKingInCheck = False
+    def isPlayerInCheck(self, isPlayerWhite):
+        isPlayerInCheck = False
         for piece in self.activePieces:
             # only evaluate opponent pieces
-            if piece.getIsWhite() == self.isWhitesTurn:
+            if piece.getIsWhite() == isPlayerWhite:
                 continue
             piece.calculateNewValidMoves()
             if piece.hasKingChecked():
-                self.isKingInCheck = True
+                isPlayerInCheck = True
                 break
-        return self.isKingInCheck
+        return isPlayerInCheck
+
+    def whereIsOpposingPlayerInCheck(self):
+        for piece in self.activePieces:
+            # only evaluate friendly pieces
+            if not piece.getIsWhite() == self.isWhitesTurn:
+                continue
+            piece.calculateNewValidMoves()
+            if piece.hasKingChecked():
+                print(f"{'Black' if piece.isWhite else 'White'} King is in Check by {piece.getCharacterName()} at {piece.getPositionColumn()}, {piece.getPositionRow()}")
+
+    '''
+    Check to see if opponent is in checkmate; if so, current player wins
+    '''
+    def isOpponentCheckmated(self):
+        # first, opponent must be in check
+        if not self.isPlayerInCheck(not self.isWhitesTurn):
+            return False
+        # simulate all the possible moves the opponent can make; if not get them out of check, it's checkmate
+        opponentPieces = [piece for piece in self.activePieces if piece.getIsWhite() != self.isWhitesTurn]
+        for piece in opponentPieces:
+            piece.calculateNewValidMoves()
+            for validMove in piece.validMoves:
+                if self.simulatePieceMovement(piece, validMove):
+                    return False
+            for validAttack in piece.validAttacks:
+                if self.simulatePieceMovement(piece, validAttack):
+                    return False
+        return True
 

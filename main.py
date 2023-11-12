@@ -16,6 +16,11 @@ clock = pygame.time.Clock()
 # game manager
 game = Game()
 
+### TODOs
+
+# TODO: fix bug where check can't be cleared by capturing the opposing piece that has the king in check
+# TOOD: fix bug where queen (others?) seemingly don't get removed from the board after capture (post check?)
+
 ### main game loop
 
 mousePieceOffset = (0, 1)   # offset between the cursor and piece's top left corner
