@@ -49,9 +49,6 @@ while carryOn:
                 newPieceYCord = event.pos[1] - mousePieceOffset[1]
                 game.dragPiece((newPieceXCord, newPieceYCord))
 
-    # update active piece locations
-    game.getActivePieces().update()
-
     # draw chessboard
     for row in range(TILE_COUNT):
         for col in range(TILE_COUNT):
